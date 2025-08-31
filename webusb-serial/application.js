@@ -62,7 +62,7 @@
         };
         port.onReceiveError = error => {
           console.error(error);
-          if (error && error.name === 'NetworkError' && port) {
+          if (port) {
             port.disconnect();
             connectButton.textContent = 'Connect';
             statusDisplay.textContent = 'Lost connection with device';
