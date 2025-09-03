@@ -80,9 +80,7 @@
         };
         port.onReceiveError = error => {
           console.error(error);
-          if (port) {
-            disconnect('Lost connection with device');
-          }
+          disconnect('Lost connection with device');
         };
       }, error => {
         statusDisplay.textContent = error;
