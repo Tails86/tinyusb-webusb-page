@@ -20,6 +20,7 @@
     let connectButton = document.querySelector("#connect");
     let statusDisplay = document.querySelector('#status');
     let port;
+    let disconnecting = false;
 
     function addLine(linesId, text) {
       var senderLine = document.createElement("div");
@@ -46,6 +47,23 @@
       }
     }
 
+    function disconnect(reason = '') {
+      if (!port || disconnecting) {
+        // Nothing else to do
+        return;
+      }
+
+      statusDisplay.textContent = 'Disconnecting...';
+      disconnecting = true;
+
+      port.disconnect().finally(() => {
+        connectButton.textContent = 'Connect';
+        statusDisplay.textContent = reason;
+        port = null;
+        disconnecting = false;
+      });
+    }
+
     function connect() {
       port.connect().then(() => {
         statusDisplay.textContent = '';
@@ -63,10 +81,7 @@
         port.onReceiveError = error => {
           console.error(error);
           if (port) {
-            port.disconnect();
-            connectButton.textContent = 'Connect';
-            statusDisplay.textContent = 'Lost connection with device';
-            port = null;
+            disconnect('Lost connection with device');
           }
         };
       }, error => {
@@ -76,10 +91,7 @@
 
     connectButton.addEventListener('click', function() {
       if (port) {
-        port.disconnect();
-        connectButton.textContent = 'Connect';
-        statusDisplay.textContent = '';
-        port = null;
+        disconnect();
       } else {
         serial.requestPort().then(selectedPort => {
           port = selectedPort;
