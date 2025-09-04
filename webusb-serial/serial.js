@@ -3,12 +3,16 @@ var serial = {};
 (function() {
   'use strict';
 
+  // Note: This will only return devices that have been granted permission to by the browser.
+  //       Permission is normally only granted when page is running on localhost or after device
+  //       has been selected on navigator.usb.requestDevice() (in serial.requestPort() below).
   serial.getPorts = function() {
     return navigator.usb.getDevices().then(devices => {
       return devices.map(device => new serial.Port(device));
     });
   };
 
+  // Note: The user has to interact with the page or a UI element in order for this feature to work.
   serial.requestPort = function() {
     const filters = [
       { 'vendorId': 0xcafe }, // TinyUSB
@@ -32,7 +36,9 @@ var serial = {};
   serial.Port.prototype.connect = function() {
     let readLoop = () => {
       this.device_.transferIn(this.endpointIn, 64).then(result => {
-        this.onReceive(result.data);
+        if (result.data && result.data.byteLength > 0) {
+          this.onReceive(result.data);
+        }
         readLoop();
       }, error => {
         this.onReceiveError(error);
@@ -83,7 +89,7 @@ var serial = {};
             'request': 0x22,
             'value': 0x00,
             'index': this.interfaceNumber})
-        .then(() => this.device_.close());
+        .finally(() => this.device_.reset().finally(() => this.device_.close()));
   };
 
   serial.Port.prototype.send = function(data) {
